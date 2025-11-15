@@ -1,75 +1,92 @@
-# server.py
+# backend/server.py
 import os
+import io
 import base64
-from typing import List
+from typing import List, Dict, Any
+
 from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from PIL import Image
 import numpy as np
-import cv2
+
+# Ultralytics YOLO
 from ultralytics import YOLO
 
-MODEL_PATH = os.environ.get("MODEL_PATH", "best.pt")
-CONF_DEFAULT = float(os.environ.get("CONF", 0.25))
+# Environment
+MODEL_PATH = os.getenv("MODEL_PATH", "models/best.pt")
+CORS_ALLOWED = os.getenv("CORS_ALLOWED", "*")  # set to your frontend URL in prod
 
-app = FastAPI(title="YOLOv8 FastAPI")
-
-# Configure CORS - in production set exact origins, don't use "*"
+app = FastAPI(title="ObjectifyAI Inference API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("CORS_ALLOWED", "*").split(","),
+    allow_origins=[CORS_ALLOWED] if CORS_ALLOWED != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-print("Loading model from:", MODEL_PATH)
+# Load model once at startup
+print(f"Loading model from: {MODEL_PATH}")
 model = YOLO(MODEL_PATH)
-print("Model names:", model.names)
+print("Model loaded.")
 
-def draw_boxes_bgr(img_bgr, boxes, confs, classes, names):
-    for (x1, y1, x2, y2), conf, cls in zip(boxes, confs, classes):
-        x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
-        label = f"{names[int(cls)]} {conf:.2f}"
-        cv2.rectangle(img_bgr, (x1, y1), (x2, y2), (0,255,0), 2)
-        cv2.putText(img_bgr, label, (x1, max(12,y1-6)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-    return img_bgr
+class Prediction(BaseModel):
+    class_name: str
+    confidence: float
+    bbox: List[float]  # x1,y1,x2,y2
+
+class PredictResponse(BaseModel):
+    annotated_image_base64: str
+    predictions: List[Prediction]
 
 @app.get("/")
 def root():
     return {"status": "ok", "model": os.path.basename(MODEL_PATH)}
 
-@app.post("/predict")
-async def predict(file: UploadFile = File(...), conf: float = Form(CONF_DEFAULT)):
-    content = await file.read()
-    npimg = np.frombuffer(content, np.uint8)
-    img_bgr = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-    if img_bgr is None:
-        return JSONResponse({"error": "cannot decode image"}, status_code=400)
+@app.post("/predict", response_model=PredictResponse)
+async def predict(file: UploadFile = File(...), conf: float = Form(0.25)):
+    # Read uploaded image bytes
+    contents = await file.read()
+    img = Image.open(io.BytesIO(contents)).convert("RGB")
 
-    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    # Run prediction (Ultralytics returns Results)
+    # Provide confidence threshold via model.predict params
+    results = model.predict(source=np.array(img), conf=conf, verbose=False)
 
-    results = model.predict(source=img_rgb, conf=conf, save=False, verbose=False)
-    r = results[0]
+    # We expect single image results[0]
+    res = results[0]
 
-    boxes, confs, classes = [], [], []
-    if hasattr(r, "boxes") and r.boxes is not None:
-        for box in r.boxes:
-            xyxy = box.xyxy[0].tolist()
-            score = float(box.conf[0])
-            cls = int(box.cls[0])
-            boxes.append(xyxy)
-            confs.append(score)
-            classes.append(cls)
+    # Build predictions list
+    preds = []
+    if hasattr(res, "boxes") and res.boxes is not None:
+        boxes = res.boxes.xyxy.cpu().numpy() if res.boxes.xyxy is not None else []
+        confs = res.boxes.conf.cpu().numpy() if res.boxes.conf is not None else []
+        clss = res.boxes.cls.cpu().numpy() if res.boxes.cls is not None else []
+        names = model.model.names if hasattr(model.model, "names") else {}
+        for b, c, cl in zip(boxes, confs, clss):
+            x1, y1, x2, y2 = [float(v) for v in b.tolist()]
+            preds.append({
+                "class_name": names.get(int(cl), str(int(cl))),
+                "confidence": float(c),
+                "bbox": [x1, y1, x2, y2]
+            })
 
-    img_annot = draw_boxes_bgr(img_bgr.copy(), boxes, confs, classes, model.names)
-    _, buffer = cv2.imencode(".jpg", img_annot)
-    jpg_bytes = buffer.tobytes()
-    jpg_b64 = base64.b64encode(jpg_bytes).decode("utf-8")
+    # Create annotated image (res.plot() returns np array)
+    try:
+        annotated = res.plot()  # numpy HxWx3 BGR? Ultralytics returns RGB ndarray
+        # Ensure RGB -> PIL, then encode as JPEG base64
+        if isinstance(annotated, np.ndarray):
+            annotated_pil = Image.fromarray(annotated)
+        else:
+            annotated_pil = img
+    except Exception:
+        # fallback: return original image if plot fails
+        annotated_pil = img
 
-    preds = [
-        {"class_id": int(c), "class_name": model.names[int(c)], "confidence": float(conf), "bbox": [float(x) for x in box]}
-        for box, conf, c in zip(boxes, confs, classes)
-    ]
+    buffered = io.BytesIO()
+    annotated_pil.save(buffered, format="JPEG", quality=90)
+    img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-    return JSONResponse({"predictions": preds, "annotated_image_base64": jpg_b64})
+    return {"annotated_image_base64": img_b64, "predictions": preds}

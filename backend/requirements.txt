@@ -1,8 +1,6 @@
-fastapi
-uvicorn[standard]
-python-multipart
-pillow
-ultralytics
-opencv-python-headless
-numpy
-python-dotenv
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+pillow==10.0.0
+python-multipart==0.0.6
+ultralytics==8.3.228
+numpy==1.26.0
