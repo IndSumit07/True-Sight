@@ -1,31 +1,155 @@
-ObjectifyAI - YOLOv8 Webapp (Backend + Frontend)
+# 🔥 TrueSight — AI-Based Safety Equipment Detection  
+### **YOLOv8 + FastAPI + React | Full Stack Computer Vision System**
 
-Repository layout:
-- backend/: FastAPI server (loads best.pt)
-- frontend/: React app (upload -> /predict)
+---
 
-Quickstart (dev):
-1. Place your trained model best.pt into backend/models/ (create folder).
-2. Backend:
-   cd backend
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   export MODEL_PATH="/full/path/to/backend/models/best.pt"
-   uvicorn server:app --host 0.0.0.0 --port 8000 --workers 1
+## 🚀 Overview
 
-3. Frontend:
-   cd frontend
-   npm install
-   export REACT_APP_API_URL="http://localhost:8000/predict"  # optional
-   npm start
+**TrueSight** is an AI-powered computer vision system designed to detect **safety equipment** in images.  
+It uses a custom-trained **YOLOv8s model**, a **FastAPI backend**, and a beautiful **React web interface**.
 
-4. Visit http://localhost:3000
+This project was built for the **HackBeyond Hackathon 2025**.
 
-Docker (optional):
-- Edit docker-compose.yml and mount your model into ./backend/models/best.pt
-- Run: docker-compose up --build
+---
 
-Notes:
-- Use --workers 1 when using GPU.
-- In production, set CORS_ALLOWED to your frontend domain.
+## 🎯 Features
+
+- ✔ Detect 7 safety equipment classes  
+- ✔ Real-time image upload & prediction  
+- ✔ Annotated image returned (Base64)  
+- ✔ MERN-style frontend (React + API backend)  
+- ✔ Fully Dockerized backend for smooth deployment  
+- ✔ mAP50 score: **0.78**  
+- ✔ Simple & fast REST API for integration  
+
+---
+
+## 🧠 Model Details
+
+### **Model Used:** YOLOv8s  
+### **7 Classes:**  
+- Oxygen Tank  
+- Nitrogen Tank  
+- First Aid Box  
+- Fire Alarm  
+- Safety Switch Panel  
+- Emergency Phone  
+- Fire Extinguisher  
+
+### **Training Stats**
+| Metric | Value |
+|--------|--------|
+| Epochs | 50 |
+| mAP50 | **0.787** |
+| mAP50-95 | **0.661** |
+| Precision | **0.90** |
+| Recall | **0.72** |
+
+### **Confidence Threshold**
+We use:
+
+```
+0.25 (25%)
+```
+
+To eliminate low-confidence predictions and reduce false positives.
+
+---
+
+## 📁 Project Structure
+
+```
+TrueSight/
+│
+├── backend/
+│   ├── server.py
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── models/
+│   │    └── best.pt
+│   └── utils/
+│
+└── frontend/
+    ├── src/
+    │   ├── App.jsx
+    │   └── styles.css
+    ├── public/
+    └── package.json
+```
+
+
+---
+
+
+# 🧪 API Documentation
+
+## **POST /predict**
+Upload an image → get back annotated image + detections.
+
+### **Request**
+```
+POST /predict
+Content-Type: multipart/form-data
+file: image.jpg
+conf: 0.25
+```
+
+# Use Our Webapp
+
+---
+
+# 🐳 Backend Setup (Local)
+
+### Install dependencies
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### Run server
+```bash
+.\.venv\Scripts\Activate
+python -m uvicorn server:app --host 0.0.0.0 --port 8000 --workers 1
+```
+
+---
+
+# 🌐 Frontend Setup (React)
+
+### Install dependencies:
+```bash
+cd frontend
+npm install
+```
+
+### Run Dev Server:
+```bash
+npm start
+```
+
+---
+
+# 🧾 Hackathon Submission Summary
+
+| Submission Item | Status |
+|------------------|--------|
+| Model trained | ✔ Done |
+| mAP50 score | **0.78** |
+| best.pt | ✔ Provided |
+| Working web app | ✔ Deployed |
+| GitHub repository | ✔ Public |
+| Slides / PPT | ✔ Attached |
+| Demo video (optional) | Pending |
+
+
+# 🙏 Acknowledgements
+
+- Ultralytics YOLOv8  
+- FastAPI Community  
+- ReactJS Community  
+- HackBeyond Hackathon  
+
+---
+
+# ⭐ If you like this project  
+Give the repo a **star ⭐ on GitHub**!
