@@ -86,10 +86,10 @@ TrueSight/
 > *(Replace with your screenshots)*
 
 ### **Image 1**
-![Image 1]([assets/input.jpg](https://drive.google.com/file/d/1yV3hAEdzWbi1sTcgTXbAqCOzi4AnpTBc/view?usp=sharing))
+![Image 1](https://drive.google.com/file/d/1yV3hAEdzWbi1sTcgTXbAqCOzi4AnpTBc/view?usp=sharing)
 
 ### **Image 2**
-![Image 2]([assets/output.jpg](https://drive.google.com/file/d/1Bmqrc0IA0KrgB7SYSuz1XvShZWvjdz1M/view?usp=sharing))
+![Image 2](https://drive.google.com/file/d/1Bmqrc0IA0KrgB7SYSuz1XvShZWvjdz1M/view?usp=sharing)
 
 ---
 
