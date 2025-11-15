@@ -1,0 +1,11 @@
+path: /content/hackathon_ws/dataset/train_1
+train: /content/hackathon_ws/dataset/train_1/train1/images
+val: /content/hackathon_ws/dataset/train_1/val1/images
+names:
+- OxygenTank
+- NitrogenTank
+- FirstAidBox
+- FireAlarm
+- SafetySwitchPanel
+- EmergencyPhone
+- FireExtinguisher
