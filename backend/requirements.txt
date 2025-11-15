@@ -1,6 +1,6 @@
 fastapi==0.95.2
 uvicorn[standard]==0.22.0
+ultralytics==8.3.228
 pillow==9.5.0
 python-multipart==0.0.6
-ultralytics==8.3.228
 numpy==1.26.0
