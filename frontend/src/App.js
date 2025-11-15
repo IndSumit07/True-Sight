@@ -77,7 +77,7 @@ function App() {
         <div className="brand">
           <div className="logo">O</div>
           <div className="title">
-            <h1>ObjectifyAI</h1>
+            <h1>TrueSight</h1>
             <p>Safety Equipment Detector — YOLOv8</p>
           </div>
         </div>
